@@ -1,0 +1,95 @@
+<!-- Liew Qian Hui 22063182 -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}NADMA - Report Disaster{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header disaster-header">
+                    <h2 class="mb-0">Report a Disaster</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead mb-4">Please provide details about the disaster you've witnessed. Your report will help authorities respond effectively.</p>
+
+                    <form method="post" class="disaster-report-form">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.disaster_type.id_for_label }}" class="form-label">Type of Disaster</label>
+                            {{ form.disaster_type }}
+                            {% if form.disaster_type.errors %}
+                                <div class="text-danger">{{ form.disaster_type.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.severity.id_for_label }}" class="form-label">Severity Level</label>
+                            {{ form.severity }}
+                            <div class="form-text">Please estimate how severe the situation is.</div>
+                            {% if form.severity.errors %}
+                                <div class="text-danger">{{ form.severity.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.location.id_for_label }}" class="form-label">Location</label>
+                            {{ form.location }}
+                            <div class="form-text">Please provide a specific address or landmark.</div>
+                            {% if form.location.errors %}
+                                <div class="text-danger">{{ form.location.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.latitude.id_for_label }}" class="form-label">Latitude</label>
+                                {{ form.latitude }}
+                                {% if form.latitude.errors %}
+                                    <div class="text-danger">{{ form.latitude.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.longitude.id_for_label }}" class="form-label">Longitude</label>
+                                {{ form.longitude }}
+                                {% if form.longitude.errors %}
+                                    <div class="text-danger">{{ form.longitude.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="form-text mb-3">If you don't know your coordinates, try using a map app to find them.</div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Detailed Description</label>
+                            {{ form.description }}
+                            <div class="form-text">Please provide as much detail as possible about the situation.</div>
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-disaster btn-lg">Submit Report</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Your report will be immediately visible to authorities in the area.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Could add JavaScript for map integration or validation here
+</script>
+{% endblock %}

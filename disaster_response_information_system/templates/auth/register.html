@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register - NADMA DRIS{% endblock %}
+
+{% block content %}
+<div class="flex-row justify-content-center">
+    <div class="column-large">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">Register</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="flex-row">
+                        <div class="column-half margin-bottom-medium">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                            {{ form.username.errors }}
+                            <input type="text" name="username" class="form-control {% if form.username.errors %}input-error{% endif %}"
+                                   id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" required>
+                        </div>
+                        <div class="column-half margin-bottom-medium">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.email.errors }}
+                            <input type="email" name="email" class="form-control {% if form.email.errors %}input-error{% endif %}"
+                                   id="{{ form.email.id_for_label }}" value="{{ form.email.value|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="flex-row">
+                        <div class="column-half margin-bottom-medium">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                            {{ form.first_name.errors }}
+                            <input type="text" name="first_name" class="form-control {% if form.first_name.errors %}input-error{% endif %}"
+                                   id="{{ form.first_name.id_for_label }}" value="{{ form.first_name.value|default:'' }}">
+                        </div>
+                        <div class="column-half margin-bottom-medium">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                            {{ form.last_name.errors }}
+                            <input type="text" name="last_name" class="form-control {% if form.last_name.errors %}input-error{% endif %}"
+                                   id="{{ form.last_name.id_for_label }}" value="{{ form.last_name.value|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="flex-row">
+                        <div class="column-half margin-bottom-medium">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                            {{ form.password.errors }}
+                            <input type="password" name="password" class="form-control {% if form.password.errors %}input-error{% endif %}"
+                                   id="{{ form.password.id_for_label }}" required>
+                        </div>
+                        <div class="column-half margin-bottom-medium">
+                            <label for="{{ form.confirm_password.id_for_label }}" class="form-label">Confirm Password</label>
+                            {{ form.confirm_password.errors }}
+                            <input type="password" name="confirm_password" class="form-control {% if form.confirm_password.errors %}input-error{% endif %}"
+                                   id="{{ form.confirm_password.id_for_label }}" required>
+                        </div>
+                    </div>
+
+                    <div class="flex-row">
+                        <div class="column-half margin-bottom-medium">
+                            <label for="{{ form.user_role.id_for_label }}" class="form-label">User Role</label>
+                            {{ form.user_role.errors }}
+                            <select name="user_role" class="form-select {% if form.user_role.errors %}input-error{% endif %}"
+                                   id="{{ form.user_role.id_for_label }}" required>
+                                {% for value, text in form.fields.user_role.choices %}
+                                <option value="{{ value }}" {% if form.user_role.value == value %}selected{% endif %}>{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="column-half margin-bottom-medium">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">Phone Number</label>
+                            {{ form.phone.errors }}
+                            <input type="text" name="phone" class="form-control {% if form.phone.errors %}input-error{% endif %}"
+                                   id="{{ form.phone.id_for_label }}" value="{{ form.phone.value|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="margin-bottom-medium">
+                        <label for="{{ form.address.id_for_label }}" class="form-label">Address</label>
+                        {{ form.address.errors }}
+                        <textarea name="address" class="form-control {% if form.address.errors %}input-error{% endif %}"
+                                 id="{{ form.address.id_for_label }}" rows="3">{{ form.address.value|default:'' }}</textarea>
+                    </div>
+
+                    <div class="button-container">
+                        <button type="submit" class="btn btn-primary full-width-button">Register</button>
+                    </div>
+                </form>
+                <div class="text-center margin-top-medium">
+                    <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+<!-- Liew Qian Hui 22063182 -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}NADMA - My Aid Requests{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <h1>My Aid Requests</h1>
+    <p class="lead">View and track your aid requests.</p>
+</div>
+
+{% if aid_requests %}
+    <div class="row">
+        {% for request in aid_requests %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 aid-card">
+                    <div class="card-header aid-header d-flex justify-content-between align-items-center">
+                        <span>{{ request.get_aid_type_display }}</span>
+                        <span class="status-badge status-{{ request.status }}">{{ request.get_status_display }}</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Location: {{ request.location }}</h5>
+                        <p class="card-text"><strong>Description:</strong> {{ request.description }}</p>
+                        <p class="card-text"><strong>Number of people:</strong> {{ request.num_people }}</p>
+                        <p class="card-text"><strong>Requested on:</strong> {{ request.requested_at|date:"M d, Y H:i" }}</p>
+
+                        {% if request.status == 'approved' %}
+                            <div class="alert alert-success" role="alert">
+                                <strong>Approved by:</strong> {{ request.approved_by.get_full_name|default:request.approved_by.username }}
+                            </div>
+                        {% elif request.status == 'rejected' %}
+                            <div class="alert alert-danger" role="alert">
+                                <strong>Rejected by:</strong> {{ request.approved_by.get_full_name|default:request.approved_by.username }}
+                            </div>
+                        {% endif %}
+
+                        {% if request.shelter %}
+                            <div class="shelter-assignment">
+                                <h6>Assigned Shelter:</h6>
+                                <div class="shelter-details">
+                                    <strong>{{ request.shelter.name }}</strong>
+                                    <p class="no-margin-bottom">{{ request.shelter.address }}</p>
+                                    <p class="no-margin-bottom"><small>Contact: {{ request.shelter.contact_info }}</small></p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        {% if request.status == 'pending' %}
+                            <span class="text-muted">Your request is being reviewed</span>
+                        {% elif request.status == 'approved' %}
+                            <span class="text-success">Your request has been approved</span>
+                        {% elif request.status == 'in_progress' %}
+                            <span class="text-primary">Aid is being prepared</span>
+                        {% elif request.status == 'completed' %}
+                            <span class="text-success">Aid has been provided</span>
+                        {% elif request.status == 'rejected' %}
+                            <span class="text-danger">Your request was not approved</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <p>You have not submitted any aid requests yet.</p>
+        <a href="{% url 'aid_request_create' %}" class="btn btn-primary action-spacing">Request Aid</a>
+    </div>
+{% endif %}
+
+<div class="action-section">
+    <a href="{% url 'aid_request_create' %}" class="btn btn-aid">Create New Aid Request</a>
+</div>
+{% endblock %}

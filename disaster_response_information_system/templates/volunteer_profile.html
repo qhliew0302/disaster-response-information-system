@@ -1,0 +1,75 @@
+<!-- Liew Qian Hui 22063182 -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}NADMA - Volunteer Profile{% endblock %}
+
+{% block content %}
+<div class="container mb-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-5">
+                <div class="card-header bg-info-custom">
+                    <h2 class="mb-0">Volunteer Profile</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead mb-4">Thank you for volunteering! Please update your availability and select the skills you can offer to help during disasters.</p>
+
+                    <form method="post" class="volunteer-profile-form">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label for="{{ form.availability.id_for_label }}" class="form-label">Current Availability</label>
+                            {{ form.availability }}
+                            <div class="form-text">Please update this whenever your availability changes.</div>
+                            {% if form.availability.errors %}
+                                <div class="text-danger">{{ form.availability.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Your Skills</label>
+                            <div class="skills-selection border rounded p-3">
+                                {% for skill in form.skills %}
+                                <div class="form-check">
+                                    {{ skill.tag }}
+                                    <label class="form-check-label" for="{{ skill.id_for_label }}">
+                                        {{ skill.choice_label }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-text">Select all skills that you can contribute.</div>
+                            {% if form.skills.errors %}
+                                <div class="text-danger">{{ form.skills.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2 mb-4">
+                            <button type="submit" class="btn btn-info text-white btn-lg">Save Profile</button>
+                        </div>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div class="volunteer-guidelines mt-4">
+                        <h3 class="mb-3 text-secondary">Volunteer Guidelines</h3>
+                        <ul class="guidelines-list">
+                            <li><strong>Safety First:</strong> Never put yourself in danger. Follow all safety instructions.</li>
+                            <li><strong>Communication:</strong> Keep your phone charged and with you at all times.</li>
+                            <li><strong>Reliability:</strong> Only accept assignments you can commit to completing.</li>
+                            <li><strong>Updates:</strong> Regularly update your availability status.</li>
+                            <li><strong>Teamwork:</strong> Coordinate with other volunteers and authorities.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> When there's a need matching your skills, authorities may assign you tasks which will appear in "My Assignments".
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

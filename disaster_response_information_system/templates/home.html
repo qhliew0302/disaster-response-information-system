@@ -1,0 +1,115 @@
+<!-- Liew Qian Hui 22063182 -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}NADMA - Disaster Response Information System Home{% endblock %}
+
+{% block content %}
+<div class="jumbotron welcome-container rounded">
+    <div class="welcome-content">
+        <h1>Welcome to Disaster Response Information System</h1>
+        <p class="lead">This system helps coordinate disaster response efforts in your area.</p>
+        <hr class="section-divider">
+        <p>Report a disaster, request aid, or volunteer to help those in need.</p>
+        <div class="action-buttons margin-top-medium">
+            <a href="{% url 'disaster_reports' %}" class="btn btn-softer-blue btn-spacing">View Disaster Reports</a>
+            <a href="{% url 'shelters' %}" class="btn btn-success">Find Shelters</a>
+        </div>
+    </div>
+</div>
+
+<!-- Banner image section -->
+<div class="banner-container">
+    <img src="{% static 'images/disaster_response_banner.JPG' %}" alt="Disaster Response Banner" class="img-fluid banner-image">
+    <div class="banner-overlay">
+        <div class="banner-text-container">
+            <h1 class="banner-title">Together in Crisis, Stronger in Recovery</h1>
+            <p class="banner-subtitle">Uniting Communities, Saving Lives</p>
+        </div>
+    </div>
+</div>
+
+<div class="flex-row margin-top-large">
+    <div class="column-medium margin-bottom-medium">
+        <div class="card h-100 disaster-card">
+            <div class="card-header disaster-header">
+                Report a Disaster
+            </div>
+            <div class="card-body">
+                <p>If you've witnessed a disaster, report it to help authorities respond quickly.</p>
+            </div>
+            <div class="card-footer">
+                {% if user.is_authenticated %}
+                    {% if user.user_role == 'citizen' %}
+                        <a href="{% url 'disaster_report_create' %}" class="btn btn-disaster btn-sm">Report Disaster</a>
+                    {% else %}
+                        <a href="{% url 'logout' %}?next={% url 'login' %}" class="btn btn-disaster btn-sm"
+                           onclick="return confirm('You must be logged in as a citizen to report a disaster. Click OK to logout, then login with a citizen account.')">Report Disaster</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}?next={% url 'disaster_report_create' %}" class="btn btn-disaster btn-sm">Report Disaster</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="column-medium margin-bottom-medium">
+        <div class="card h-100 aid-card">
+            <div class="card-header aid-header">
+                Request Aid
+            </div>
+            <div class="card-body">
+                <p>In need of assistance? Submit a request for food, shelter, rescue, or medical help.</p>
+            </div>
+            <div class="card-footer">
+                {% if user.is_authenticated %}
+                    {% if user.user_role == 'citizen' %}
+                        <a href="{% url 'aid_request_create' %}" class="btn btn-aid btn-sm">Request Aid</a>
+                    {% else %}
+                        <a href="{% url 'logout' %}?next={% url 'login' %}" class="btn btn-aid btn-sm"
+                           onclick="return confirm('You must be logged in as a citizen to request aid. Click OK to logout, then login with a citizen account.')">Request Aid</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}?next={% url 'aid_request_create' %}" class="btn btn-aid btn-sm">Request Aid</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="column-medium margin-bottom-medium">
+        <div class="card h-100 volunteer-card">
+            <div class="card-header volunteer-header">
+                Volunteer
+            </div>
+            <div class="card-body">
+                <p>Have skills that can help others? Register as a volunteer and make a difference.</p>
+            </div>
+            <div class="card-footer">
+                {% if user.is_authenticated %}
+                    {% if user.user_role == 'volunteer' %}
+                        <a href="{% url 'volunteer_profile' %}" class="btn btn-volunteer btn-sm">Update My Profile</a>
+                    {% else %}
+                        <a href="{% url 'logout' %}?next={% url 'register' %}?volunteer=true" class="btn btn-volunteer btn-sm"
+                           onclick="return confirm('You must have a volunteer account to volunteer. Click OK to logout, then register a new volunteer account.')">Volunteer Now</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'register' %}?volunteer=true" class="btn btn-volunteer btn-sm">Volunteer Now</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Check for login message parameter
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const message = urlParams.get('message');
+        if (message) {
+            alert(message);
+        }
+    });
+</script>
+{% endblock %}

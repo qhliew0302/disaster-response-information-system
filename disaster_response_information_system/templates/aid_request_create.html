@@ -1,0 +1,95 @@
+<!-- Liew Qian Hui 22063182 -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}NADMA - Submit Aid Request{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-warning-custom">
+                    <h2 class="mb-0">Request Aid</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead mb-4">Please fill out the form below to request aid. Provide as much detail as possible to help us respond effectively.</p>
+
+                    <form method="post" class="aid-request-form">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.aid_type.id_for_label }}" class="form-label">Type of Aid Needed</label>
+                            {{ form.aid_type }}
+                            {% if form.aid_type.errors %}
+                                <div class="text-danger">{{ form.aid_type.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description of Needs</label>
+                            {{ form.description }}
+                            <div class="form-text">Please provide details about your situation and what assistance you require.</div>
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.location.id_for_label }}" class="form-label">Location</label>
+                            {{ form.location }}
+                            <div class="form-text">Please provide your street address or a descriptive location.</div>
+                            {% if form.location.errors %}
+                                <div class="text-danger">{{ form.location.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.latitude.id_for_label }}" class="form-label">Latitude</label>
+                                {{ form.latitude }}
+                                {% if form.latitude.errors %}
+                                    <div class="text-danger">{{ form.latitude.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.longitude.id_for_label }}" class="form-label">Longitude</label>
+                                {{ form.longitude }}
+                                {% if form.longitude.errors %}
+                                    <div class="text-danger">{{ form.longitude.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="form-text mb-3">If you don't know your coordinates, try using a map app to find them.</div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.num_people.id_for_label }}" class="form-label">{{ form.num_people.label }}</label>
+                            {{ form.num_people }}
+                            {% if form.num_people.errors %}
+                                <div class="text-danger">{{ form.num_people.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">Submit Aid Request</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> After submitting your request, you can track its status in "My Aid Requests".
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // You could add JavaScript here for map selection of coordinates
+    // or client-side validation if needed
+</script>
+{% endblock %}

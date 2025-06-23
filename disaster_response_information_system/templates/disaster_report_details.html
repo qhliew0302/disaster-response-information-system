@@ -1,0 +1,169 @@
+<!-- Liew Qian Hui 22063182 -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Disaster Report Details - NADMA DRIS{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'disaster_reports' %}">Disaster Reports</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Details</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header {% if report.severity >= 3 %}bg-danger{% elif report.severity == 2 %}bg-warning{% else %}bg-info{% endif %} text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">{{ report.get_disaster_type_display }}</h3>
+                    <span class="severity-badge {% if report.severity == 4 %}severity-4{% elif report.severity == 3 %}severity-3{% elif report.severity == 2 %}severity-2{% else %}severity-1{% endif %}">
+                        {{ report.get_severity_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-softer-blue mb-3">Report Information</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th width="30%">Location</th>
+                                    <td>{{ report.location }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Reported By</th>
+                                    <td>{{ report.reporter.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Reported On</th>
+                                    <td>{{ report.reported_at|date:"F j, Y, g:i a" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status</th>
+                                    <td>
+                                        {% if report.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-softer-blue mb-3">Location on Map</h5>
+                            <div class="map-container p-3 bg-light border rounded text-center">
+                                <div class="alert alert-secondary mb-0">
+                                    <p class="mb-2">Coordinates:</p>
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <code class="bg-white p-2 rounded">{{ report.latitude }}, {{ report.longitude }}</code>
+                                        <a href="https://maps.google.com/?q={{ report.latitude }},{{ report.longitude }}"
+                                           target="_blank" class="btn btn-sm btn-softer-blue ms-3">
+                                            Open in Google Maps
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="text-softer-blue mb-3">Description</h5>
+                    <div class="p-3 bg-light rounded mb-4">
+                        <p class="mb-0">{{ report.description }}</p>
+                    </div>
+
+                    <h5 class="text-softer-blue mb-3">Impact</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">People Affected</h6>
+                                    <h3 class="mb-0">{{ report.people_affected|default:"Unknown" }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">Area Affected (km²)</h6>
+                                    <h3 class="mb-0">{{ report.area_affected|default:"Unknown" }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">Infrastructure Damage</h6>
+                                    <h3 class="mb-0">{{ report.get_infrastructure_damage_display|default:"Unknown" }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if user.user_role == 'authority' %}
+                        <div class="border-top pt-4">
+                            <h5 class="text-softer-blue mb-3">Admin Actions</h5>
+                            <form method="post" action="{% url 'update_disaster_status' report.id %}" class="d-inline-block">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="{% if report.is_active %}deactivate{% else %}activate{% endif %}">
+                                <button type="submit" class="btn {% if report.is_active %}btn-danger{% else %}btn-success{% endif %} me-2">
+                                    {% if report.is_active %}Deactivate{% else %}Activate{% endif %} Report
+                                </button>
+                            </form>
+                            <a href="{% url 'disaster_reports' %}" class="btn btn-outline-secondary">Back to Reports</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .map-container {
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .severity-badge {
+        font-weight: bold;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .severity-1 {
+        background-color: #17a2b8;
+        border: 1px solid #138496;
+    }
+
+    .severity-2 {
+        background-color: #ffc107;
+        border: 1px solid #e0a800;
+        color: #212529;
+    }
+
+    .severity-3 {
+        background-color: #fd7e14;
+        border: 1px solid #e36a02;
+    }
+
+    .severity-4 {
+        background-color: #dc3545;
+        border: 1px solid #bd2130;
+    }
+</style>
+{% endblock %}

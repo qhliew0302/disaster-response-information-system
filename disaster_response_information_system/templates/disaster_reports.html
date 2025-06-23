@@ -1,0 +1,242 @@
+<!-- Liew Qian Hui 22063182 -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Disaster Reports - NADMA DRIS{% endblock %}
+
+{% block content %}
+<h1 class="margin-bottom-medium">Disaster Reports</h1>
+<p class="lead">Current reported disasters in your area. Use the filters to find specific reports.</p>
+
+<div class="card margin-bottom-medium">
+    <div class="card-header">
+        <h4>Filter Disaster Reports</h4>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'disaster_reports' %}" class="filter-form">
+            <div class="flex-row">
+                <div class="column-medium margin-bottom-small">
+                    <label for="{{ filter_form.disaster_type.id_for_label }}" class="form-label">Disaster Type</label>
+                    {{ filter_form.disaster_type }}
+                </div>
+
+                <div class="column-medium margin-bottom-small">
+                    <label for="{{ filter_form.severity.id_for_label }}" class="form-label">Severity Level</label>
+                    {{ filter_form.severity }}
+                </div>
+
+                <div class="column-medium margin-bottom-small">
+                    <label for="{{ filter_form.date_range.id_for_label }}" class="form-label">Time Period</label>
+                    {{ filter_form.date_range }}
+                </div>
+            </div>
+
+            <div class="flex-row">
+                <div class="column-medium margin-bottom-small">
+                    <label for="{{ filter_form.location.id_for_label }}" class="form-label">Location</label>
+                    {{ filter_form.location }}
+                </div>
+
+                <div class="column-medium margin-bottom-small">
+                    <label for="{{ filter_form.sort_by.id_for_label }}" class="form-label">Sort By</label>
+                    {{ filter_form.sort_by }}
+                </div>
+
+                <div class="column-medium margin-bottom-small d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary margin-right-small">Apply Filters</button>
+                    <a href="{% url 'disaster_reports' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="disaster-reports-container">
+    {% if reports %}
+        <div class="flex-row">
+            {% for report in reports %}
+            <div class="column-medium margin-bottom-medium">
+                <div class="card h-100 disaster-report-card {% if report.severity >= 3 %}severity-high{% elif report.severity == 2 %}severity-medium{% else %}severity-low{% endif %}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="fw-bold disaster-type">{{ report.get_disaster_type_display }}</span>
+                        <span class="severity-badge {% if report.severity == 4 %}severity-4{% elif report.severity == 3 %}severity-3{% elif report.severity == 2 %}severity-2{% else %}severity-1{% endif %}">
+                            {{ report.get_severity_display }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ report.location }}</h5>
+                        <p class="card-text">{{ report.description|truncatechars:100 }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>{{ report.reported_at|date:"F j, Y, g:i a" }}</small>
+                        </div>
+                        <div class="mt-2">
+                            <small class="reporter-info"><i class="bi bi-person me-1"></i>Reported by: {{ report.reporter.username }}</small>
+                        </div>
+                        {% if not report.is_active %}
+                            <div class="mt-3">
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% if user.user_role == 'authority' %}
+                                <small class="text-muted ms-2">This report is awaiting approval</small>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <a href="{% url 'disaster_report_detail' report.id %}" class="btn btn-sm btn-outline-primary view-details-btn">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination controls -->
+        {% if reports.has_other_pages %}
+        <nav aria-label="Disaster reports pagination" class="margin-top-medium">
+            <ul class="pagination justify-content-center">
+                {% if reports.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ reports.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-hidden="true">&laquo;</span>
+                    </li>
+                {% endif %}
+
+                {% for i in reports.paginator.page_range %}
+                    {% if reports.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if reports.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ reports.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-hidden="true">&raquo;</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            {% if request.GET %}
+                No disaster reports match your filter criteria. <a href="{% url 'disaster_reports' %}">Clear filters</a> to see all reports.
+            {% else %}
+                No disaster reports available at this time.
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+{% if user.user_role == 'citizen' %}
+<div class="margin-top-large">
+    <a href="{% url 'disaster_report_create' %}" class="btn btn-primary">Report New Disaster</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Enhanced disaster report card styling */
+    .disaster-report-card {
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        border: none;
+    }
+
+    .disaster-report-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+
+    .disaster-report-card .card-header {
+        padding: 0.8rem 1rem;
+        border-bottom: none;
+    }
+
+    .disaster-report-card .card-body {
+        padding-top: 0.8rem;
+    }
+
+    .disaster-type {
+        font-size: 1.05rem;
+        color: #333;
+    }
+
+    .severity-badge {
+        font-weight: bold;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .severity-1 {
+        background-color: #17a2b8;
+        border: 1px solid #138496;
+    }
+
+    .severity-2 {
+        background-color: #ffc107;
+        border: 1px solid #e0a800;
+        color: #212529;
+    }
+
+    .severity-3 {
+        background-color: #fd7e14;
+        border: 1px solid #e36a02;
+    }
+
+    .severity-4 {
+        background-color: #dc3545;
+        border: 1px solid #bd2130;
+    }
+
+    .severity-high {
+        border-left: 5px solid #dc3545;
+    }
+
+    .severity-medium {
+        border-left: 5px solid #ffc107;
+    }
+
+    .severity-low {
+        border-left: 5px solid #17a2b8;
+    }
+
+    .reporter-info {
+        color: #6c757d;
+        display: block;
+    }
+
+    .view-details-btn {
+        padding: 0.3rem 0.8rem;
+        border-radius: 4px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .view-details-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .card-footer {
+        background-color: rgba(0,0,0,0.02);
+        padding: 0.8rem 1rem;
+    }
+</style>
+{% endblock %}

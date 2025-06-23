@@ -1,0 +1,236 @@
+<!-- Liew Qian Hui 22063182 -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}NADMA - My Assignments{% endblock %}
+
+{% block content %}
+<div class="container mb-5">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card mb-5">
+                <div class="card-header bg-softer-blue text-white">
+                    <h2 class="mb-0">My Volunteer Assignments</h2>
+                </div>
+                <div class="card-body">
+                    {% if assignments %}
+                        <div class="table-responsive mb-4">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Assignment Date</th>
+                                        <th>Aid Type</th>
+                                        <th>Location</th>
+                                        <th>Status</th>
+                                        <th>Details</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in assignments %}
+                                        <tr>
+                                            <td>{{ assignment.assigned_at|date:"M d, Y" }}</td>
+                                            <td>
+                                                <span class="badge bg-info">
+                                                    {{ assignment.aid_request.get_aid_type_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ assignment.aid_request.location }}</td>
+                                            <td>
+                                                {% if assignment.status == 'assigned' %}
+                                                    <span class="badge bg-warning">Assigned</span>
+                                                {% elif assignment.status == 'in_progress' %}
+                                                    <span class="badge bg-softer-blue">In Progress</span>
+                                                {% elif assignment.status == 'completed' %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% elif assignment.status == 'cancelled' %}
+                                                    <span class="badge bg-danger">Cancelled</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-outline-softer-blue" data-bs-toggle="modal" data-bs-target="#detailsModal{{ assignment.id }}">
+                                                    View Details
+                                                </button>
+
+                                                <!-- Details Modal -->
+                                                <div class="modal fade" id="detailsModal{{ assignment.id }}" tabindex="-1" aria-labelledby="detailsModalLabel{{ assignment.id }}" aria-hidden="true">
+                                                    <div class="modal-dialog modal-lg">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header bg-softer-blue text-white">
+                                                                <h5 class="modal-title" id="detailsModalLabel{{ assignment.id }}">Assignment Details</h5>
+                                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="row mb-4">
+                                                                    <div class="col-md-6">
+                                                                        <h5 class="text-softer-blue">Aid Request Information</h5>
+                                                                        <p><strong>Type:</strong> {{ assignment.aid_request.get_aid_type_display }}</p>
+                                                                        <p><strong>Requested by:</strong> {{ assignment.aid_request.requester.username }}</p>
+                                                                        <p><strong>People affected:</strong> {{ assignment.aid_request.num_people }}</p>
+                                                                        <p><strong>Location:</strong> {{ assignment.aid_request.location }}</p>
+                                                                        <p><strong>Requested on:</strong> {{ assignment.aid_request.requested_at|date:"F d, Y, g:i a" }}</p>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <h5 class="text-softer-blue">Assignment Information</h5>
+                                                                        <p><strong>Assigned on:</strong> {{ assignment.assigned_at|date:"F d, Y, g:i a" }}</p>
+                                                                        <p><strong>Assigned by:</strong> {{ assignment.assigned_by.username }}</p>
+                                                                        <p><strong>Status:</strong> {{ assignment.get_status_display }}</p>
+                                                                        {% if assignment.completed_at %}
+                                                                            <p><strong>Completed on:</strong> {{ assignment.completed_at|date:"F d, Y, g:i a" }}</p>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="alert alert-light border">
+                                                                    <h6>Description:</h6>
+                                                                    <p>{{ assignment.aid_request.description }}</p>
+                                                                </div>
+
+                                                                {% if assignment.notes %}
+                                                                    <div class="alert alert-info">
+                                                                        <h6>Notes from coordinator:</h6>
+                                                                        <p>{{ assignment.notes }}</p>
+                                                                    </div>
+                                                                {% endif %}
+
+                                                                <div class="mt-4">
+                                                                    <h5 class="text-softer-blue">Location on Map</h5>
+                                                                    <div class="alert alert-secondary">
+                                                                        <p class="mb-2">You can use these coordinates to navigate to the location:</p>
+                                                                        <div class="d-flex align-items-center">
+                                                                            <code class="bg-light p-2 rounded">{{ assignment.aid_request.latitude }}, {{ assignment.aid_request.longitude }}</code>
+                                                                            <a href="https://maps.google.com/?q={{ assignment.aid_request.latitude }},{{ assignment.aid_request.longitude }}"
+                                                                               target="_blank" class="btn btn-sm btn-softer-blue ms-3">
+                                                                                Open in Google Maps
+                                                                            </a>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if assignment.status == 'assigned' %}
+                                                    <form method="post" action="{% url 'update_assignment_status' assignment.id 'in_progress' %}">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-sm btn-softer-blue">
+                                                            Start Assignment
+                                                        </button>
+                                                    </form>
+                                                {% elif assignment.status == 'in_progress' %}
+                                                    <form method="post" action="{% url 'update_assignment_status' assignment.id 'completed' %}">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-sm btn-success">
+                                                            Mark as Completed
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled>
+                                                        No Actions Available
+                                                    </button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <h5>No assignments yet!</h5>
+                            <p>You don't have any active assignments at the moment. When authorities assign tasks to you based on your skills, they will appear here.</p>
+                            <a href="{% url 'volunteer_profile' %}" class="btn btn-softer-blue mt-2">Update Your Profile</a>
+                        </div>
+                    {% endif %}
+
+                    <hr class="my-4">
+
+                    <div class="volunteer-instructions-section">
+                        <h4 class="mb-3 text-softer-blue">Instructions for Volunteers</h4>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <ol class="assignment-instructions mb-0">
+                                    <li><strong>Review assignment details</strong> thoroughly before accepting or starting any task.</li>
+                                    <li><strong>Click "Start Assignment"</strong> when you are ready to begin the assigned task.</li>
+                                    <li><strong>Mark as Completed</strong> only when you have fully finished the assigned task.</li>
+                                    <li><strong>If you need assistance or clarification</strong>, contact the assignment coordinator.</li>
+                                    <li><strong>Always prioritize your safety</strong> and follow all safety protocols.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-primary mt-3">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="bi bi-info-circle-fill fs-3"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Need help with your assignment?</h5>
+                                    <p class="mb-0">Contact the emergency coordination center at <strong>603-1234-5678</strong>.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for the assignments page */
+    .assignment-instructions li {
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
+
+    .assignment-instructions li strong {
+        color: #4c8daf;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.7rem;
+        font-weight: 500;
+    }
+
+    .volunteer-instructions-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    /* Improved modal styles */
+    .modal-content {
+        border: none;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    /* Animation for the instructions section */
+    @keyframes fadein {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .volunteer-instructions-section {
+        animation: fadein 0.5s ease-out;
+    }
+</style>
+{% endblock %}

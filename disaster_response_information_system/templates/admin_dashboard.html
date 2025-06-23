@@ -1,0 +1,1077 @@
+<!-- Liew Qian Hui 22063182 -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}NADMA - Authority Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-header rounded">
+    <div class="admin-header-content">
+        <h1>Authority Dashboard</h1>
+        <p class="lead">Monitor and manage disaster response resources and requests</p>
+    </div>
+</div>
+
+<div class="admin-tabs">
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">Overview</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="disaster-reports-tab" data-bs-toggle="tab" data-bs-target="#disaster-reports" type="button" role="tab" aria-controls="disaster-reports" aria-selected="false">Disaster Reports</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="aid-requests-tab" data-bs-toggle="tab" data-bs-target="#aid-requests" type="button" role="tab" aria-controls="aid-requests" aria-selected="false">Aid Requests</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="shelters-tab" data-bs-toggle="tab" data-bs-target="#shelters" type="button" role="tab" aria-controls="shelters" aria-selected="false">Shelters</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="volunteers-tab" data-bs-toggle="tab" data-bs-target="#volunteers" type="button" role="tab" aria-controls="volunteers" aria-selected="false">Volunteers</button>
+        </li>
+    </ul>
+    <div class="tab-content" id="adminTabContent">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+            <div class="admin-dashboard-stats">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-card disaster-stat">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-value">{{ active_reports }}</div>
+                            <div class="stat-label">Active Disasters</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card aid-stat">
+                            <div class="stat-icon">🆘</div>
+                            <div class="stat-value">{{ pending_aid_requests }}</div>
+                            <div class="stat-label">Pending Aid Requests</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card shelter-stat">
+                            <div class="stat-icon">🏘️</div>
+                            <div class="stat-value">{{ shelters|length }}</div>
+                            <div class="stat-label">Active Shelters</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card volunteer-stat">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-value">{{ available_volunteers }}</div>
+                            <div class="stat-label">Available Volunteers</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disaster Reports Tab -->
+        <div class="tab-pane fade" id="disaster-reports" role="tabpanel" aria-labelledby="disaster-reports-tab">
+            <div class="admin-section">
+                <h3>Manage Disaster Reports</h3>
+                <div class="filter-section mb-4">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <select class="form-select" id="disasterStatusFilter">
+                                <option value="all">All Reports</option>
+                                <option value="active">Active Only</option>
+                                <option value="inactive">Inactive Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="disasterTypeFilter">
+                                <option value="">All Types</option>
+                                {% for code, name in disaster_types %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="disasterSeverityFilter">
+                                <option value="">All Severity Levels</option>
+                                {% for code, name in severity_levels %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" id="applyDisasterFilter">Apply Filters</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Location</th>
+                                <th>Severity</th>
+                                <th>Reporter</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in disaster_reports %}
+                            <tr>
+                                <td>{{ report.reported_at|date:"M d, Y H:i" }}</td>
+                                <td>{{ report.get_disaster_type_display }}</td>
+                                <td>{{ report.location }}</td>
+                                <td>
+                                    <span class="severity-badge severity-{{ report.severity }}">
+                                        {{ report.get_severity_display }}
+                                    </span>
+                                </td>
+                                <td>{{ report.reporter.username }}</td>
+                                <td>
+                                    {% if report.is_active %}
+                                    <span class="status-badge status-active">Active</span>
+                                    {% else %}
+                                    <span class="status-badge status-inactive">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'disaster_report_detail' report.id %}" class="btn btn-sm btn-info">
+                                            <i class="fa fa-eye"></i> View
+                                        </a>
+                                        {% if report.is_active %}
+                                        <a href="{% url 'toggle_disaster_report_status' report.id %}" class="btn btn-sm btn-warning">
+                                            <i class="fa fa-ban"></i> Deactivate
+                                        </a>
+                                        {% else %}
+                                        <a href="{% url 'toggle_disaster_report_status' report.id %}" class="btn btn-sm btn-success">
+                                            <i class="fa fa-check"></i> Activate
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No disaster reports found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if disaster_reports.has_other_pages %}
+                <nav aria-label="Disaster reports pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if disaster_reports.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?disaster_page={{ disaster_reports.previous_page_number }}">&laquo;</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                        {% endif %}
+
+                        {% for i in disaster_reports.paginator.page_range %}
+                        {% if disaster_reports.number == i %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ i }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?disaster_page={{ i }}">{{ i }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if disaster_reports.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?disaster_page={{ disaster_reports.next_page_number }}">&raquo;</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Aid Requests Tab -->
+        <div class="tab-pane fade" id="aid-requests" role="tabpanel" aria-labelledby="aid-requests-tab">
+            <div class="admin-section">
+                <h3>Manage Aid Requests</h3>
+                <div class="filter-section mb-4">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <select class="form-select" id="aidStatusFilter">
+                                <option value="all">All Statuses</option>
+                                {% for code, name in aid_status_choices %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="aidTypeFilter">
+                                <option value="">All Types</option>
+                                {% for code, name in aid_types %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="aidLocationFilter" placeholder="Location...">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" id="applyAidFilter">Apply Filters</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Requester</th>
+                                <th>Location</th>
+                                <th>People</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in aid_requests %}
+                            <tr>
+                                <td>{{ request.requested_at|date:"M d, Y H:i" }}</td>
+                                <td>{{ request.get_aid_type_display }}</td>
+                                <td>{{ request.requester.username }}</td>
+                                <td>{{ request.location }}</td>
+                                <td>{{ request.num_people }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ request.status }}">
+                                        {{ request.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="#" class="btn btn-sm btn-info view-aid-btn" data-aid-id="{{ request.id }}">
+                                            <i class="fa fa-eye"></i> View
+                                        </a>
+                                        {% if request.status == 'pending' %}
+                                        <a href="{% url 'update_aid_request_status' request.id 'approved' %}" class="btn btn-sm btn-success">
+                                            <i class="fa fa-check"></i> Approve
+                                        </a>
+                                        <a href="{% url 'update_aid_request_status' request.id 'rejected' %}" class="btn btn-sm btn-danger">
+                                            <i class="fa fa-times"></i> Reject
+                                        </a>
+                                        {% elif request.status == 'approved' %}
+                                        <a href="#" class="btn btn-sm btn-primary assign-volunteer-btn" data-aid-id="{{ request.id }}">
+                                            <i class="fa fa-user"></i> Assign Volunteer
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No aid requests found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if aid_requests.has_other_pages %}
+                <nav aria-label="Aid requests pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if aid_requests.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?aid_page={{ aid_requests.previous_page_number }}">&laquo;</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                        {% endif %}
+
+                        {% for i in aid_requests.paginator.page_range %}
+                        {% if aid_requests.number == i %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ i }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?aid_page={{ i }}">{{ i }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if aid_requests.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?aid_page={{ aid_requests.next_page_number }}">&raquo;</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Shelters Tab -->
+        <div class="tab-pane fade" id="shelters" role="tabpanel" aria-labelledby="shelters-tab">
+            <div class="admin-section">
+                <h3>Manage Shelters</h3>
+                <div class="mb-3">
+                    <a href="{% url 'shelter_create' %}" class="btn btn-success">
+                        <i class="fa fa-plus"></i> Add New Shelter
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Address</th>
+                                <th>Capacity</th>
+                                <th>Occupancy</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for shelter in shelters %}
+                            <tr>
+                                <td>{{ shelter.name }}</td>
+                                <td>{{ shelter.address }}</td>
+                                <td>{{ shelter.capacity }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-{{ shelter.is_full|yesno:'danger,success' }}"
+                                             role="progressbar"
+                                             style="width: {{ shelter.occupancy_percentage }}%"
+                                             aria-valuenow="{{ shelter.occupancy_percentage }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
+                                            {{ shelter.current_occupancy }}/{{ shelter.capacity }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if shelter.is_active %}
+                                    <span class="status-badge status-active">Active</span>
+                                    {% else %}
+                                    <span class="status-badge status-inactive">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'shelter_edit' shelter.id %}" class="btn btn-sm btn-primary">
+                                            <i class="fa fa-edit"></i> Edit
+                                        </a>
+                                        {% if shelter.is_active %}
+                                        <a href="{% url 'toggle_shelter_status' shelter.id %}" class="btn btn-sm btn-warning">
+                                            <i class="fa fa-ban"></i> Deactivate
+                                        </a>
+                                        {% else %}
+                                        <a href="{% url 'toggle_shelter_status' shelter.id %}" class="btn btn-sm btn-success">
+                                            <i class="fa fa-check"></i> Activate
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No shelters found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Volunteers Tab -->
+        <div class="tab-pane fade" id="volunteers" role="tabpanel" aria-labelledby="volunteers-tab">
+            <div class="admin-section">
+                <h3>Manage Volunteers</h3>
+                <div class="filter-section mb-4">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <select class="form-select" id="volunteerStatusFilter">
+                                <option value="all">All Volunteers</option>
+                                <option value="available">Available Only</option>
+                                <option value="unavailable">Unavailable Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="volunteerSkillFilter">
+                                <option value="">All Skills</option>
+                                {% for skill in skills %}
+                                    <option value="{{ skill.id }}">{{ skill.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-primary w-100" id="applyVolunteerFilter">Apply Filters</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Contact</th>
+                                <th>Skills</th>
+                                <th>Availability</th>
+                                <th>Current Assignments</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for volunteer in volunteers %}
+                            <tr>
+                                <td>{{ volunteer.user.get_full_name|default:volunteer.user.username }}</td>
+                                <td>
+                                    {{ volunteer.user.email }}<br>
+                                    {{ volunteer.user.phone|default:"No phone" }}
+                                </td>
+                                <td>
+                                    <ul class="skill-list">
+                                        {% for skill in volunteer.skills.all %}
+                                        <li class="skill-badge">{{ skill.name }}</li>
+                                        {% empty %}
+                                        <li>No skills listed</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ volunteer.availability }}">
+                                        {{ volunteer.get_availability_display }}
+                                    </span>
+                                </td>
+                                <td>{{ volunteer.user.assignments.count }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="#" class="btn btn-sm btn-info view-volunteer-btn" data-volunteer-id="{{ volunteer.id }}">
+                                            <i class="fa fa-eye"></i> View Profile
+                                        </a>
+                                        <a href="{% url 'assign_volunteer' volunteer.user.id %}" class="btn btn-sm btn-primary">
+                                            <i class="fa fa-tasks"></i> Assign Task
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No volunteers found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Disaster Report Modal -->
+<div class="modal fade" id="viewReportModal" tabindex="-1" aria-labelledby="viewReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewReportModalLabel">Disaster Report Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="reportModalContent">
+                <!-- Content will be loaded dynamically -->
+                <div class="loading-spinner">Loading...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a id="toggleReportStatusBtn" href="#" class="btn btn-warning">Toggle Status</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Aid Request Modal -->
+<div class="modal fade" id="viewAidModal" tabindex="-1" aria-labelledby="viewAidModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewAidModalLabel">Aid Request Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="aidModalContent">
+                <!-- Content will be loaded dynamically -->
+                <div class="loading-spinner">Loading...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div class="btn-group" id="aidActionBtns">
+                    <!-- Buttons will be injected dynamically based on status -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Volunteer Modal -->
+<div class="modal fade" id="assignVolunteerModal" tabindex="-1" aria-labelledby="assignVolunteerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignVolunteerModalLabel">Assign Volunteer to Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignVolunteerForm" method="post" action="{% url 'assign_volunteer_to_request' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="aid_request_id" id="assignAidRequestId" value="">
+
+                    <div class="mb-3">
+                        <label for="volunteerSelect" class="form-label">Select Volunteer</label>
+                        <select class="form-select" id="volunteerSelect" name="volunteer_id" required>
+                            <option value="">-- Select a Volunteer --</option>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="assignmentNotes" class="form-label">Assignment Notes</label>
+                        <textarea class="form-control" id="assignmentNotes" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="assignVolunteerForm" class="btn btn-primary">Assign Volunteer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Volunteer Profile Modal -->
+<div class="modal fade" id="viewVolunteerModal" tabindex="-1" aria-labelledby="viewVolunteerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewVolunteerModalLabel">Volunteer Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="volunteerModalContent">
+                <!-- Content will be loaded dynamically -->
+                <div class="loading-spinner">Loading...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // View Disaster Report Modal
+    const viewReportBtns = document.querySelectorAll('.view-report-btn');
+    const reportModalContent = document.getElementById('reportModalContent');
+    const toggleReportStatusBtn = document.getElementById('toggleReportStatusBtn');
+
+    // Handle disaster report filters
+    const applyDisasterFilterBtn = document.getElementById('applyDisasterFilter');
+    if (applyDisasterFilterBtn) {
+        applyDisasterFilterBtn.addEventListener('click', function() {
+            const statusFilter = document.getElementById('disasterStatusFilter').value;
+            const typeFilter = document.getElementById('disasterTypeFilter').value;
+            const severityFilter = document.getElementById('disasterSeverityFilter').value;
+
+            let url = '/admin-dashboard/?';
+
+            if (statusFilter && statusFilter !== 'all') {
+                url += 'filter_status=' + statusFilter + '&';
+            }
+
+            if (typeFilter) {
+                url += 'filter_type=' + typeFilter + '&';
+            }
+
+            if (severityFilter) {
+                url += 'filter_severity=' + severityFilter + '&';
+            }
+
+            // Remove trailing & if exists
+            if (url.endsWith('&')) {
+                url = url.slice(0, -1);
+            }
+
+            window.location.href = url;
+        });
+    }
+
+    // Handle aid request filters
+    const applyAidFilterBtn = document.getElementById('applyAidFilter');
+    if (applyAidFilterBtn) {
+        applyAidFilterBtn.addEventListener('click', function() {
+            const statusFilter = document.getElementById('aidStatusFilter').value;
+            const typeFilter = document.getElementById('aidTypeFilter').value;
+            const locationFilter = document.getElementById('aidLocationFilter').value;
+
+            let url = '/admin-dashboard/?';
+
+            if (statusFilter && statusFilter !== 'all') {
+                url += 'aid_filter_status=' + statusFilter + '&';
+            }
+
+            if (typeFilter) {
+                url += 'aid_filter_type=' + typeFilter + '&';
+            }
+
+            if (locationFilter) {
+                url += 'aid_filter_location=' + encodeURIComponent(locationFilter) + '&';
+            }
+
+            if (url.endsWith('&')) {
+                url = url.slice(0, -1);
+            }
+
+            window.location.href = url;
+        });
+    }
+
+    // Handle volunteer filters
+    const applyVolunteerFilterBtn = document.getElementById('applyVolunteerFilter');
+    if (applyVolunteerFilterBtn) {
+        applyVolunteerFilterBtn.addEventListener('click', function() {
+            const statusFilter = document.getElementById('volunteerStatusFilter').value;
+            const skillFilter = document.getElementById('volunteerSkillFilter').value;
+
+            let url = '/admin-dashboard/?';
+
+            if (statusFilter && statusFilter !== 'all') {
+                url += 'volunteer_filter_status=' + statusFilter + '&';
+            }
+
+            if (skillFilter) {
+                url += 'volunteer_filter_skill=' + skillFilter + '&';
+            }
+
+            if (url.endsWith('&')) {
+                url = url.slice(0, -1);
+            }
+
+            window.location.href = url;
+        });
+    }
+
+    // Set selected values based on current filters
+    window.addEventListener('load', function() {
+        // Set disaster filter values
+        const disasterStatusFilter = document.getElementById('disasterStatusFilter');
+        const disasterTypeFilter = document.getElementById('disasterTypeFilter');
+        const disasterSeverityFilter = document.getElementById('disasterSeverityFilter');
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (disasterStatusFilter && urlParams.has('filter_status')) {
+            disasterStatusFilter.value = urlParams.get('filter_status');
+        }
+
+        if (disasterTypeFilter && urlParams.has('filter_type')) {
+            disasterTypeFilter.value = urlParams.get('filter_type');
+        }
+
+        if (disasterSeverityFilter && urlParams.has('filter_severity')) {
+            disasterSeverityFilter.value = urlParams.get('filter_severity');
+        }
+
+        // Set aid filter values
+        const aidStatusFilter = document.getElementById('aidStatusFilter');
+        const aidTypeFilter = document.getElementById('aidTypeFilter');
+        const aidLocationFilter = document.getElementById('aidLocationFilter');
+
+        if (aidStatusFilter && urlParams.has('aid_filter_status')) {
+            aidStatusFilter.value = urlParams.get('aid_filter_status');
+        }
+
+        if (aidTypeFilter && urlParams.has('aid_filter_type')) {
+            aidTypeFilter.value = urlParams.get('aid_filter_type');
+        }
+
+        if (aidLocationFilter && urlParams.has('aid_filter_location')) {
+            aidLocationFilter.value = urlParams.get('aid_filter_location');
+        }
+
+        // Set volunteer filter values
+        const volunteerStatusFilter = document.getElementById('volunteerStatusFilter');
+        const volunteerSkillFilter = document.getElementById('volunteerSkillFilter');
+
+        if (volunteerStatusFilter && urlParams.has('volunteer_filter_status')) {
+            volunteerStatusFilter.value = urlParams.get('volunteer_filter_status');
+        }
+
+        if (volunteerSkillFilter && urlParams.has('volunteer_filter_skill')) {
+            volunteerSkillFilter.value = urlParams.get('volunteer_filter_skill');
+        }
+    });
+
+    viewReportBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const reportId = this.getAttribute('data-report-id');
+
+            // Show loading spinner
+            reportModalContent.innerHTML = '<div class="loading-spinner">Loading...</div>';
+
+            // Fetch report details using AJAX
+            fetch(`/api/disaster-report/${reportId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update modal content with report details
+                    reportModalContent.innerHTML = `
+                        <div class="report-details">
+                            <h4>${data.get_disaster_type_display} at ${data.location}</h4>
+                            <p class="text-muted">Reported on ${data.reported_at} by ${data.reporter_name}</p>
+
+                            <div class="report-info-grid">
+                                <div class="report-info-item">
+                                    <strong>Severity:</strong>
+                                    <span class="severity-badge severity-${data.severity}">${data.get_severity_display}</span>
+                                </div>
+                                <div class="report-info-item">
+                                    <strong>Status:</strong>
+                                    <span class="status-badge status-${data.is_active ? 'active' : 'inactive'}">
+                                        ${data.is_active ? 'Active' : 'Inactive'}
+                                    </span>
+                                </div>
+                                <div class="report-info-item">
+                                    <strong>Coordinates:</strong>
+                                    <span>${data.latitude}, ${data.longitude}</span>
+                                </div>
+                            </div>
+
+                            <h5 class="mt-4">Description</h5>
+                            <div class="report-description">
+                                ${data.description}
+                            </div>
+
+                            <!-- Simple map would go here -->
+                            <div class="report-map mt-3" id="reportMap-${reportId}">
+                                <div class="map-placeholder">
+                                    Map showing location at ${data.latitude}, ${data.longitude}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Update toggle status button
+                    toggleReportStatusBtn.textContent = data.is_active ? 'Deactivate Report' : 'Activate Report';
+                    toggleReportStatusBtn.href = `/toggle-disaster-report-status/${reportId}/`;
+                    toggleReportStatusBtn.className = data.is_active ? 'btn btn-warning' : 'btn btn-success';
+
+                    // Show the modal
+                    const reportModal = new bootstrap.Modal(document.getElementById('viewReportModal'));
+                    reportModal.show();
+                })
+                .catch(error => {
+                    reportModalContent.innerHTML = `<div class="alert alert-danger">Error loading report details: ${error.message}</div>`;
+                });
+        });
+    });
+
+    // Aid Request View and Actions
+    const viewAidBtns = document.querySelectorAll('.view-aid-btn');
+    const aidModalContent = document.getElementById('aidModalContent');
+    const aidActionBtns = document.getElementById('aidActionBtns');
+
+    viewAidBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const aidId = this.getAttribute('data-aid-id');
+
+            // Show loading spinner
+            aidModalContent.innerHTML = '<div class="loading-spinner">Loading...</div>';
+
+            // Fetch aid request details using AJAX
+            fetch(`/api/aid-request/${aidId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update modal content with aid request details
+                    aidModalContent.innerHTML = `
+                        <div class="aid-request-details">
+                            <h4>${data.get_aid_type_display} Aid Request</h4>
+                            <p class="text-muted">Requested on ${data.requested_at} by ${data.requester_name}</p>
+
+                            <div class="aid-info-grid">
+                                <div class="aid-info-item">
+                                    <strong>Status:</strong>
+                                    <span class="status-badge status-${data.status}">
+                                        ${data.get_status_display}
+                                    </span>
+                                </div>
+                                <div class="aid-info-item">
+                                    <strong>Location:</strong>
+                                    <span>${data.location}</span>
+                                </div>
+                                <div class="aid-info-item">
+                                    <strong>People Affected:</strong>
+                                    <span>${data.num_people}</span>
+                                </div>
+                                <div class="aid-info-item">
+                                    <strong>Contact:</strong>
+                                    <span>${data.contact_info}</span>
+                                </div>
+                            </div>
+
+                            <h5 class="mt-4">Description</h5>
+                            <div class="aid-description">
+                                ${data.description}
+                            </div>
+                        </div>
+                    `;
+
+                    // Update action buttons based on status
+                    aidActionBtns.innerHTML = '';
+                    if (data.status === 'pending') {
+                        aidActionBtns.innerHTML = `
+                            <a href="/update-aid-request-status/${data.id}/approved/" class="btn btn-success">
+                                <i class="fa fa-check"></i> Approve
+                            </a>
+                            <a href="/update-aid-request-status/${data.id}/rejected/" class="btn btn-danger">
+                                <i class="fa fa-times"></i> Reject
+                            </a>
+                        `;
+                    } else if (data.status === 'approved') {
+                        aidActionBtns.innerHTML = `
+                            <button class="btn btn-primary assign-from-modal" data-aid-id="${data.id}">
+                                <i class="fa fa-user"></i> Assign Volunteer
+                            </button>
+                        `;
+                        // Add event listener to the newly created button
+                        document.querySelector('.assign-from-modal').addEventListener('click', function() {
+                            const assignModal = new bootstrap.Modal(document.getElementById('assignVolunteerModal'));
+                            assignAidRequestId.value = this.getAttribute('data-aid-id');
+
+                            // Fetch available volunteers
+                            fetch(`/api/available-volunteers-for-aid/${data.id}/`)
+                                .then(response => response.json())
+                                .then(volunteers => {
+                                    // Clear existing options
+                                    volunteerSelect.innerHTML = '<option value="">-- Select a Volunteer --</option>';
+
+                                    // Add new options
+                                    volunteers.forEach(volunteer => {
+                                        const option = document.createElement('option');
+                                        option.value = volunteer.id;
+                                        option.textContent = `${volunteer.name} - ${volunteer.skills.join(', ')}`;
+                                        volunteerSelect.appendChild(option);
+                                    });
+
+                                    // Hide the aid modal and show the assign modal
+                                    const aidModal = bootstrap.Modal.getInstance(document.getElementById('viewAidModal'));
+                                    aidModal.hide();
+                                    assignModal.show();
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching volunteers:', error);
+                                    alert('Error loading volunteers. Please try again.');
+                                });
+                        });
+                    }
+
+                    // Show the modal
+                    const aidModal = new bootstrap.Modal(document.getElementById('viewAidModal'));
+                    aidModal.show();
+                })
+                .catch(error => {
+                    aidModalContent.innerHTML = `<div class="alert alert-danger">Error loading aid request details: ${error.message}</div>`;
+                });
+        });
+    });
+
+    // Assign Volunteer Modal
+    const assignVolunteerBtns = document.querySelectorAll('.assign-volunteer-btn');
+    const volunteerSelect = document.getElementById('volunteerSelect');
+    const assignAidRequestId = document.getElementById('assignAidRequestId');
+
+    // Handle both the cancel button and the close (X) button
+    const cancelAssignBtn = document.querySelector('#assignVolunteerModal .btn-secondary');
+    const closeAssignBtn = document.querySelector('#assignVolunteerModal .btn-close');
+
+    const redirectToAdminDashboard = function() {
+        window.location.href = '/admin-dashboard/';
+    };
+
+    // Add event listeners for both cancel and X buttons
+    cancelAssignBtn.addEventListener('click', redirectToAdminDashboard);
+    closeAssignBtn.addEventListener('click', redirectToAdminDashboard);
+
+    // Handle both the cancel button and the close (X) button for viewAidModal
+    const cancelAidBtn = document.querySelector('#viewAidModal .btn-secondary');
+    const closeAidBtn = document.querySelector('#viewAidModal .btn-close');
+
+    // Add event listeners for both cancel and X buttons in viewAidModal
+    cancelAidBtn.addEventListener('click', redirectToAdminDashboard);
+    closeAidBtn.addEventListener('click', redirectToAdminDashboard);
+
+    // Handle both the cancel button and the close (X) button for viewVolunteerModal
+    const cancelVolunteerBtn = document.querySelector('#viewVolunteerModal .btn-secondary');
+    const closeVolunteerBtn = document.querySelector('#viewVolunteerModal .btn-close');
+
+    // Add event listeners for both cancel and X buttons in viewVolunteerModal
+    cancelVolunteerBtn.addEventListener('click', redirectToAdminDashboard);
+    closeVolunteerBtn.addEventListener('click', redirectToAdminDashboard);
+
+    assignVolunteerBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const aidId = this.getAttribute('data-aid-id');
+            assignAidRequestId.value = aidId;
+
+            // Fetch available volunteers for this aid type
+            fetch(`/api/available-volunteers-for-aid/${aidId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing options
+                    volunteerSelect.innerHTML = '<option value="">-- Select a Volunteer --</option>';
+
+                    // Add new options
+                    data.forEach(volunteer => {
+                        const option = document.createElement('option');
+                        option.value = volunteer.id;
+                        option.textContent = `${volunteer.name} - ${volunteer.skills.join(', ')}`;
+                        volunteerSelect.appendChild(option);
+                    });
+
+                    // Show the modal
+                    const assignModal = new bootstrap.Modal(document.getElementById('assignVolunteerModal'));
+                    assignModal.show();
+                })
+                .catch(error => {
+                    console.error('Error fetching volunteers:', error);
+                    alert('Error loading volunteers. Please try again.');
+                });
+        });
+    });
+
+    // Tab persistence between page loads
+    const savedTab = localStorage.getItem('adminActiveTab');
+    if (savedTab) {
+        const tabElement = document.querySelector(`button[data-bs-target="${savedTab}"]`);
+        if (tabElement) {
+            const tab = new bootstrap.Tab(tabElement);
+            tab.show();
+        }
+    }
+
+    // Save active tab on click
+    const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            localStorage.setItem('adminActiveTab', e.target.getAttribute('data-bs-target'));
+        });
+    });
+
+    // View Volunteer Profile
+    const viewVolunteerBtns = document.querySelectorAll('.view-volunteer-btn');
+    const volunteerModalContent = document.getElementById('volunteerModalContent');
+
+    viewVolunteerBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const volunteerId = this.getAttribute('data-volunteer-id');
+
+            // Show loading spinner
+            volunteerModalContent.innerHTML = '<div class="loading-spinner">Loading...</div>';
+
+            // Fetch volunteer details using AJAX
+            fetch(`/api/volunteer-profile/${volunteerId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update modal content with volunteer details
+                    volunteerModalContent.innerHTML = `
+                        <div class="volunteer-details">
+                            <h4>${data.full_name || data.username}</h4>
+                            <p class="text-muted">Member since ${data.date_joined}</p>
+
+                            <div class="volunteer-info-grid">
+                                <div class="volunteer-info-item">
+                                    <strong>Email:</strong>
+                                    <span>${data.email}</span>
+                                </div>
+                                <div class="volunteer-info-item">
+                                    <strong>Phone:</strong>
+                                    <span>${data.phone || 'Not provided'}</span>
+                                </div>
+                                <div class="volunteer-info-item">
+                                    <strong>Status:</strong>
+                                    <span class="status-badge status-${data.availability}">
+                                        ${data.availability_display}
+                                    </span>
+                                </div>
+                                <div class="volunteer-info-item">
+                                    <strong>Current Assignments:</strong>
+                                    <span>${data.assignment_count}</span>
+                                </div>
+                            </div>
+
+                            <h5 class="mt-4">Skills</h5>
+                            <div class="volunteer-skills">
+                                <ul class="skill-list">
+                                    ${data.skills.map(skill => `<li class="skill-badge">${skill}</li>`).join('') || '<li>No skills listed</li>'}
+                                </ul>
+                            </div>
+
+                            ${data.assignments && data.assignments.length > 0 ? `
+                            <h5 class="mt-4">Current Assignments</h5>
+                            <div class="volunteer-assignments">
+                                <ul class="assignment-list">
+                                    ${data.assignments.map(assignment => `
+                                        <li class="assignment-item">
+                                            <strong>${assignment.aid_type}</strong> - ${assignment.location}
+                                            <span class="badge bg-${assignment.status === 'in_progress' ? 'warning' : 'success'}">${assignment.status_display}</span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+
+                    // Show the modal
+                    const volunteerModal = new bootstrap.Modal(document.getElementById('viewVolunteerModal'));
+                    volunteerModal.show();
+                })
+                .catch(error => {
+                    volunteerModalContent.innerHTML = `<div class="alert alert-danger">Error loading volunteer profile: ${error.message}</div>`;
+                });
+        });
+    });
+
+    // Handle the Assign Task buttons in the Volunteers tab
+    const assignTaskBtns = document.querySelectorAll('#volunteers .btn-primary');
+
+    assignTaskBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %}
+
+

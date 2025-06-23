@@ -1,0 +1,141 @@
+<!-- Liew Qian Hui 22063182 -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}NADMA - Available Shelters{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <h1>Available Shelters</h1>
+    <p class="lead">Find safe shelters during emergency situations.</p>
+</div>
+
+<div class="shelter-filter">
+    <form method="get" action="{% url 'shelters' %}">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="location">Filter by Location</label>
+                    <input type="text" class="form-control" id="location" name="location" placeholder="Enter location..." value="{{ location_filter }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="capacity">Filter by Capacity</label>
+                    <select class="form-select" id="capacity" name="capacity">
+                        <option value="all" {% if capacity_filter == 'all' %}selected{% endif %}>All Capacities</option>
+                        <option value="small" {% if capacity_filter == 'small' %}selected{% endif %}>Small (< 50 people)</option>
+                        <option value="medium" {% if capacity_filter == 'medium' %}selected{% endif %}>Medium (50-100 people)</option>
+                        <option value="large" {% if capacity_filter == 'large' %}selected{% endif %}>Large (> 100 people)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="availability">Filter by Availability</label>
+                    <select class="form-select" id="availability" name="availability">
+                        <option value="all" {% if availability_filter == 'all' %}selected{% endif %}>All Shelters</option>
+                        <option value="available" {% if availability_filter == 'available' %}selected{% endif %}>Available Only</option>
+                        <option value="full" {% if availability_filter == 'full' %}selected{% endif %}>Full Only</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2 d-flex align-items-end mb-3">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="shelter-stats">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="stat-card shelter-stat shelter-total">
+                <div class="stat-icon">🏘️</div>
+                <div class="stat-value">{{ total_shelters }}</div>
+                <div class="stat-label">Total Shelters</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card shelter-stat shelter-available">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value">{{ available_shelters }}</div>
+                <div class="stat-label">Available Shelters</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card shelter-stat shelter-capacity">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value">{{ available_capacity }}</div>
+                <div class="stat-label">Available Capacity</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2 class="shelter-list-heading">Shelter Listings</h2>
+
+<div class="shelter-list">
+    {% if shelters %}
+        {% for shelter in shelters %}
+            <div class="shelter-card">
+                <div class="shelter-header">
+                    <h3>{{ shelter.name }}</h3>
+                    {% if shelter.is_full %}
+                        <span class="availability-badge full">Full</span>
+                    {% elif shelter.occupancy_percentage >= 75 %}
+                        <span class="availability-badge limited">Limited</span>
+                    {% else %}
+                        <span class="availability-badge available">Available</span>
+                    {% endif %}
+                </div>
+                <div class="shelter-body">
+                    <div class="shelter-info">
+                        <div class="info-item">
+                            <span class="info-label">Address:</span>
+                            <span class="info-value">{{ shelter.address }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Contact:</span>
+                            <span class="info-value">{{ shelter.contact_info|default:"Not provided" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Capacity:</span>
+                            <div class="capacity-wrapper">
+                                <div class="capacity-bar">
+                                    <div class="capacity-fill {% if shelter.occupancy_percentage >= 90 %}capacity-high{% elif shelter.occupancy_percentage >= 50 %}capacity-medium{% endif %}"
+                                         style="width: {{ shelter.occupancy_percentage }}%"></div>
+                                </div>
+                                <span class="capacity-text">{{ shelter.current_occupancy }}/{{ shelter.capacity }} people</span>
+                            </div>
+                        </div>
+                        <!-- Note: Facilities would require an additional model/relation that's not present yet -->
+                    </div>
+                    <div class="shelter-actions">
+                        <a href="https://maps.google.com/?q={{ shelter.latitude }},{{ shelter.longitude }}"
+                           target="_blank" class="btn btn-primary btn-sm w-100">Get Directions</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-warning">
+            <p>No shelters found matching your criteria. Please try different filter options.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="shelter-note">
+    <div class="alert alert-info" role="alert">
+        <h4 class="alert-heading">Note:</h4>
+        <p>Shelter information is updated regularly. Please contact the shelter before heading there to confirm availability.</p>
+        <hr>
+        <p class="mb-0">For immediate emergency assistance, please call the Emergency Hotline: <strong>999</strong></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Server-side filtering is now implemented, no JS required -->
+{% endblock %}
+
