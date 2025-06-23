@@ -1,7 +1,7 @@
 # Liew Qian Hui 22063182
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, DisasterReport, AidRequest, Shelter, Skill, VolunteerProfile
+from .models import User, DisasterReport, AidRequest, Shelter, Skill, VolunteerProfile, VolunteerAssignment
 
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'user_role', 'is_staff')
@@ -51,14 +51,21 @@ class SkillAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
     ordering = ('name',)
 
-# Volunteer Profile admin
+# VolunteerProfile admin
 @admin.register(VolunteerProfile)
 class VolunteerProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'availability', 'display_skills')
-    list_filter = ('availability',)
-    search_fields = ('user__username', 'user__email')
+    list_display = ('user', 'availability')
+    list_filter = ('availability', 'skills')
+    search_fields = ('user__username', 'user__email', 'user__first_name', 'user__last_name')
     filter_horizontal = ('skills',)
+    raw_id_fields = ('user',)
 
-    def display_skills(self, obj):
-        return ", ".join([skill.name for skill in obj.skills.all()])
-    display_skills.short_description = 'Skills'
+# VolunteerAssignment admin
+@admin.register(VolunteerAssignment)
+class VolunteerAssignmentAdmin(admin.ModelAdmin):
+    list_display = ('volunteer', 'aid_request', 'status', 'assigned_at', 'completed_at')
+    list_filter = ('status', 'assigned_at', 'completed_at')
+    search_fields = ('volunteer__username', 'aid_request__location', 'notes')
+    raw_id_fields = ('volunteer', 'aid_request', 'assigned_by')
+    date_hierarchy = 'assigned_at'
+    ordering = ('-assigned_at',)
