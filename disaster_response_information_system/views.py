@@ -289,6 +289,26 @@ def admin_dashboard(request):
     elif filter_status == 'inactive':
         disaster_reports = disaster_reports.filter(is_active=False)
 
+    # Filter users
+    user_filter_role = request.GET.get('user_filter_role', '')
+    user_filter_name = request.GET.get('user_filter_name', '')
+    user_filter_email = request.GET.get('user_filter_email', '')
+
+    users = User.objects.all().order_by('-date_joined')
+
+    if user_filter_role:
+        users = users.filter(user_role=user_filter_role)
+
+    if user_filter_name:
+        users = users.filter(
+            Q(username__icontains=user_filter_name) |
+            Q(first_name__icontains=user_filter_name) |
+            Q(last_name__icontains=user_filter_name)
+        )
+
+    if user_filter_email:
+        users = users.filter(email__icontains=user_filter_email)
+
     # Filter aid requests
     aid_filter_type = request.GET.get('aid_filter_type', '')
     aid_filter_status = request.GET.get('aid_filter_status', '')
@@ -338,6 +358,7 @@ def admin_dashboard(request):
     severity_levels = DisasterReport.SEVERITY_LEVELS
     aid_status_choices = AidRequest.STATUS_CHOICES
     aid_types = AidRequest.AID_TYPES
+    user_role_choices = User.USER_ROLES
 
     context = {
         'total_reports': total_reports,
@@ -351,6 +372,7 @@ def admin_dashboard(request):
         'aid_requests': aid_requests[:10],  # Limit to 10 for dashboard
         'shelters': shelters[:10],  # Limit to 10 for dashboard
         'volunteers': volunteers[:10],  # Limit to 10 for dashboard
+        'users': users[:10],  # Limit to 10 for dashboard
         'skills': skills,
         # Filter values for maintaining state
         'filter_type': filter_type,
@@ -362,11 +384,15 @@ def admin_dashboard(request):
         'shelter_filter_occupancy': shelter_filter_occupancy,
         'volunteer_filter_status': volunteer_filter_status,
         'volunteer_filter_skill': volunteer_filter_skill,
+        'user_filter_role': user_filter_role,
+        'user_filter_name': user_filter_name,
+        'user_filter_email': user_filter_email,
         # Add choices for dropdowns
         'disaster_types': disaster_types,
         'severity_levels': severity_levels,
         'aid_status_choices': aid_status_choices,
         'aid_types': aid_types,
+        'user_role_choices': user_role_choices,
     }
 
     return render(request, 'admin_dashboard.html', context)
@@ -739,6 +765,46 @@ def api_volunteer_profile(request, volunteer_id):
     return JsonResponse(data)
 
 @login_required
+@user_passes_test(is_authority)
+def toggle_user_status(request, user_id):
+    """Toggle a user's active status (authority only)"""
+    if user_id == request.user.id:
+        messages.error(request, 'You cannot deactivate your own account.')
+        return redirect('admin_dashboard')
+
+    user = get_object_or_404(User, pk=user_id)
+    user.is_active = not user.is_active
+    user.save()
+
+    status = "activated" if user.is_active else "deactivated"
+    messages.success(request, f'User "{user.username}" has been {status}.')
+
+    return redirect('admin_dashboard')
+
+@login_required
+@user_passes_test(is_authority)
+def api_user_profile(request, user_id):
+    """API endpoint to get user details in JSON format"""
+    user = get_object_or_404(User, pk=user_id)
+
+    data = {
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'full_name': user.get_full_name(),
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'phone': getattr(user, 'phone', ''),
+        'address': getattr(user, 'address', ''),
+        'is_active': user.is_active,
+        'date_joined': user.date_joined.strftime('%b %d, %Y'),
+        'user_role': user.user_role,
+        'get_role_display': dict(User.USER_ROLES)[user.user_role],
+    }
+
+    return JsonResponse(data)
+
+@login_required
 def update_assignment_status(request, assignment_id, new_status):
     """Update a volunteer assignment's status"""
     # Only volunteers can update their own assignments
@@ -793,5 +859,3 @@ def update_assignment_status(request, assignment_id, new_status):
         messages.success(request, 'Assignment has been marked as completed. Thank you for your service!')
 
     return redirect('my_assignments')
-
-

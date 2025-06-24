@@ -43,4 +43,8 @@ urlpatterns = [
     path('api/aid-request/<int:request_id>/', views.api_aid_request_detail, name='api_aid_request_detail'),
     path('api/available-volunteers-for-aid/<int:request_id>/', views.api_available_volunteers, name='api_available_volunteers'),
     path('api/volunteer-profile/<int:volunteer_id>/', views.api_volunteer_profile, name='api_volunteer_profile'),
+
+    # User management
+    path('toggle-user-status/<int:user_id>/', views.toggle_user_status, name='toggle_user_status'),
+    path('api/user-profile/<int:user_id>/', views.api_user_profile, name='api_user_profile'),
 ]

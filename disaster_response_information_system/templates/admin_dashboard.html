@@ -29,6 +29,9 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="volunteers-tab" data-bs-toggle="tab" data-bs-target="#volunteers" type="button" role="tab" aria-controls="volunteers" aria-selected="false">Volunteers</button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">Users</button>
+        </li>
     </ul>
     <div class="tab-content" id="adminTabContent">
         <!-- Overview Tab -->
@@ -484,6 +487,118 @@
                 </div>
             </div>
         </div>
+
+        <!-- Users Tab -->
+        <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
+            <div class="admin-section">
+                <h3>Manage Users</h3>
+                <div class="filter-section mb-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <select class="form-select" id="userRoleFilter">
+                                <option value="">All Roles</option>
+                                {% for code, name in user_role_choices %}
+                                    <option value="{{ code }}" {% if user_filter_role == code %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-primary w-100" id="applyUserFilter">Apply Filter</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.get_full_name|default:user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.phone|default:"No phone" }}</td>
+                                <td>{{ user.get_user_role_display }}</td>
+                                <td>
+                                    {% if user.is_active %}
+                                    <span class="status-badge status-active">Active</span>
+                                    {% else %}
+                                    <span class="status-badge status-inactive">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="#" class="btn btn-sm btn-info view-user-btn" data-user-id="{{ user.id }}">
+                                            <i class="fa fa-eye"></i> View
+                                        </a>
+                                        {% if user.is_active %}
+                                        <a href="{% url 'toggle_user_status' user.id %}" class="btn btn-sm btn-warning">
+                                            <i class="fa fa-ban"></i> Deactivate
+                                        </a>
+                                        {% else %}
+                                        <a href="{% url 'toggle_user_status' user.id %}" class="btn btn-sm btn-success">
+                                            <i class="fa fa-check"></i> Activate
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No users found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if users.has_other_pages %}
+                <nav aria-label="Users pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if users.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?user_page={{ users.previous_page_number }}">&laquo;</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                        {% endif %}
+
+                        {% for i in users.paginator.page_range %}
+                        {% if users.number == i %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ i }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?user_page={{ i }}">{{ i }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if users.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?user_page={{ users.next_page_number }}">&raquo;</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 
@@ -583,6 +698,25 @@
     </div>
 </div>
 
+<!-- View User Profile Modal -->
+<div class="modal fade" id="viewUserModal" tabindex="-1" aria-labelledby="viewUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewUserModalLabel">User Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="userModalContent">
+                <!-- Content will be loaded dynamically -->
+                <div class="loading-spinner">Loading...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -637,7 +771,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (typeFilter) {
-                url += 'aid_filter_type=' + typeFilter + '&';
+                url += 'aid_filter_type=' + statusFilter + '&';
             }
 
             if (locationFilter) {
@@ -667,6 +801,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (skillFilter) {
                 url += 'volunteer_filter_skill=' + skillFilter + '&';
+            }
+
+            if (url.endsWith('&')) {
+                url = url.slice(0, -1);
+            }
+
+            window.location.href = url;
+        });
+    }
+
+    // Handle user filters
+    const applyUserFilterBtn = document.getElementById('applyUserFilter');
+    if (applyUserFilterBtn) {
+        applyUserFilterBtn.addEventListener('click', function() {
+            const roleFilter = document.getElementById('userRoleFilter').value;
+
+            let url = '/admin-dashboard/?';
+
+            if (roleFilter) {
+                url += 'user_filter_role=' + encodeURIComponent(roleFilter) + '&';
             }
 
             if (url.endsWith('&')) {
@@ -725,6 +879,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (volunteerSkillFilter && urlParams.has('volunteer_filter_skill')) {
             volunteerSkillFilter.value = urlParams.get('volunteer_filter_skill');
+        }
+
+        // Set user filter values
+        const userRoleFilter = document.getElementById('userRoleFilter');
+
+        if (userRoleFilter && urlParams.has('user_filter_role')) {
+            userRoleFilter.value = urlParams.get('user_filter_role');
         }
     });
 
@@ -910,6 +1071,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle both the cancel button and the close (X) button
     const cancelAssignBtn = document.querySelector('#assignVolunteerModal .btn-secondary');
     const closeAssignBtn = document.querySelector('#assignVolunteerModal .btn-close');
+    const cancelUserBtn = document.querySelector('#viewUserModal .btn-secondary');
+    const closeUserBtn = document.querySelector('#viewUserModal .btn-close');
 
     const redirectToAdminDashboard = function() {
         window.location.href = '/admin-dashboard/';
@@ -934,6 +1097,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners for both cancel and X buttons in viewVolunteerModal
     cancelVolunteerBtn.addEventListener('click', redirectToAdminDashboard);
     closeVolunteerBtn.addEventListener('click', redirectToAdminDashboard);
+
+    cancelUserBtn.addEventListener('click', redirectToAdminDashboard);
+    closeUserBtn.addEventListener('click', redirectToAdminDashboard);
+
 
     assignVolunteerBtns.forEach(btn => {
         btn.addEventListener('click', function(e) {
@@ -1066,6 +1233,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
     assignTaskBtns.forEach(btn => {
         btn.addEventListener('click', function(e) {
+        });
+    });
+
+    // View User Profile
+    const viewUserBtns = document.querySelectorAll('.view-user-btn');
+    const userModalContent = document.getElementById('userModalContent');
+
+    viewUserBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const userId = this.getAttribute('data-user-id');
+
+            // Show loading spinner
+            userModalContent.innerHTML = '<div class="loading-spinner">Loading...</div>';
+
+            // Fetch user details using AJAX
+            fetch(`/api/user-profile/${userId}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update modal content with user details
+                    userModalContent.innerHTML = `
+                        <div class="user-details">
+                            <h4>${data.full_name || data.username}</h4>
+                            <p class="text-muted">Joined on ${data.date_joined}</p>
+
+                            <div class="user-info-grid">
+                                <div class="user-info-item">
+                                    <strong>Email:</strong>
+                                    <span>${data.email}</span>
+                                </div>
+                                <div class="user-info-item">
+                                    <strong>Phone:</strong>
+                                    <span>${data.phone || 'Not provided'}</span>
+                                </div>
+                                <div class="user-info-item">
+                                    <strong>Role:</strong>
+                                    <span>${data.get_role_display}</span>
+                                </div>
+                                <div class="user-info-item">
+                                    <strong>Status:</strong>
+                                    <span class="status-badge status-${data.is_active ? 'active' : 'inactive'}">
+                                        ${data.is_active ? 'Active' : 'Inactive'}
+                                    </span>
+                                </div>
+                                <div class="user-info-item">
+                                    <strong>Address:</strong>
+                                    <span>${data.address || 'Not provided'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    // Initialize the modal properly
+                    const userModal = new bootstrap.Modal(document.getElementById('viewUserModal'));
+                    userModal.show();
+                })
+                .catch(error => {
+                    userModalContent.innerHTML = `<div class="alert alert-danger">Error loading user profile: ${error.message}</div>`;
+                });
         });
     });
 });
