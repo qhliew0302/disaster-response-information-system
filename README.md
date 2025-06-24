@@ -1,5 +1,8 @@
 # Disaster Response Information System (DRIS)
 
+**Author:** Liew Qian Hui  
+**Student Number:** 22063182
+
 A web-based system designed to manage disaster response operations, including reporting incidents, requesting aid, managing shelters, and coordinating volunteers.
 
 ## Features
@@ -78,4 +81,3 @@ python manage.py runserver
 - **Admin Users (Authority)**: Full access to the admin dashboard and all system features
 - **Volunteers**: Can view assignments and manage their profile
 - **General Users (Citizen)**: Can report disasters, request aid, and view shelter information
-
